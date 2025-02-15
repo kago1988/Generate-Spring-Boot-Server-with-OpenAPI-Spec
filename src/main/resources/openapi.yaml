@@ -1,0 +1,193 @@
+openapi: 3.0.1
+info:
+  description: "A middleware API that handles authentication, user management, and\
+    \ external API proxying."
+  title: Middleware API
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api
+paths:
+  /auth/login:
+    post:
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: Successful login
+        "401":
+          description: Unauthorized
+      summary: User login
+      tags:
+      - AuthenticationController
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: AuthenticationController
+  /auth/register:
+    post:
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: User registered successfully
+        "400":
+          description: Bad request
+      summary: User registration
+      tags:
+      - AuthenticationController
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: AuthenticationController
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: User profile
+        "401":
+          description: Unauthorized
+      security:
+      - BearerAuth: []
+      summary: Get the authenticated user's profile
+      tags:
+      - UserController
+      x-accepts: application/json
+      x-tags:
+      - tag: UserController
+  /users/{id}:
+    get:
+      operationId: getUserById
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: User details
+        "404":
+          description: User not found
+      summary: Get user details by ID
+      tags:
+      - UserController
+      x-accepts: application/json
+      x-tags:
+      - tag: UserController
+  /external/data:
+    get:
+      operationId: fetchExternalData
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/fetchExternalData_200_response'
+          description: External API response
+        "502":
+          description: Bad Gateway
+      security:
+      - BearerAuth: []
+      summary: Fetch data from an external API
+      tags:
+      - ExternalDataController
+      x-accepts: application/json
+      x-tags:
+      - tag: ExternalDataController
+components:
+  schemas:
+    LoginRequest:
+      example:
+        password: password
+        username: username
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - username
+      type: object
+    RegisterRequest:
+      example:
+        password: password
+        email: email
+        username: username
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+      - email
+      - password
+      - username
+      type: object
+    AuthResponse:
+      example:
+        expiresIn: 3600
+        token: token
+      properties:
+        token:
+          type: string
+        expiresIn:
+          example: 3600
+          type: integer
+      type: object
+    User:
+      example:
+        id: id
+        email: email
+        username: username
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+      type: object
+    fetchExternalData_200_response:
+      example:
+        message: message
+      properties:
+        message:
+          type: string
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
